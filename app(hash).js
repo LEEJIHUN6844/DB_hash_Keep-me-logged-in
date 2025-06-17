@@ -1,57 +1,164 @@
-
-// express 도구 사용, 3000 포트 사용, mysql.js 모듈 사용, bcrypt 모듈 사용
 const express = require('express');
-const port = 3000;
-const db = require('./mysql.js');
+const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
-
-// express 사용해 app(서버)만들기, app에서 json형식 사용
+require('dotenv').config();
+const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
+const bodyParser = require('body-parser');
+const path = require('path');
 const app = express();
-app.use(express.json()); 
+const port = 3000;
 
-// 127.0.0.1:3000로 들어오면 실행되는 코드(테스트용)
+// MySQL 연결 설정
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'dlwlgns123', // MySQL 비밀번호로 변경
+    database: 'JIHUN'
+});
+
+db.connect(err => {
+    if (err) {
+        console.error('MySQL 연결 오류:', err);
+        throw err;
+    }
+    console.log('MySQL Connected to JIHUN database...');
+});
+
+// 세션 저장소 설정
+const sessionStore = new MySQLStore({
+    host: 'localhost',
+    user: 'root',
+    password: 'dlwlgns123', // MySQL 비밀번호로 변경
+    database: 'JIHUN',
+    createDatabaseTable: true
+});
+
+// 미들웨어 설정
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(session({
+    secret: process.env.SESIION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    store: sessionStore,
+    cookie: {secure : false},
+}));
+
+// 로그인 여부 확인 미들웨어
+const isAuthenticated = (req, res, next) => {
+    if (req.session.userId) {
+        return next();
+    }
+    res.status(401).json({ error: '로그인이 필요합니다.', redirect: '/login.html' });
+};
+
+// 라우팅
 app.get('/', (req, res) => {
-    res.send('잘 실행되는구만 흠');
+    res.redirect('/login.html');
 });
 
-app.get('/db', async (req, res) => { // 127.0.0.1:3000/db에 접속하면 실행
-  try { 
-      const [rows] = await db.query('SELECT * FROM user'); // db에 접속해 user 테이블의 데이터를 가져와서 [rows]에 저장
-      res.json(rows); // rows를 json형식으로 변환해서 전송
-  
-    } catch (err) { // db에 접속하는데 에러가 나면 실행
-      console.error('DB 조회 에러:', err);
-  }
+app.get('/login.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
+app.post('/login', async (req, res) => {
+    const { username, password, rememberMe } = req.body;
 
-app.post('/db', async (req, res) => { // 127.0.0.1:3000/db에 데이터를 전송하면 실행
-    console.log('요청 본문:', req.body); // 보낸 데이터 내용을 콘솔에 출력
-    const { ID, PW } = req.body; // 보낸 데이터에서 ID와 PW를 저장
-
-    // ID와 PW가 없으면 에러 메시지 출력
-    if (!ID || !PW) { 
-        console.log('ID 또는 PW 누락'); 
-        return res.status(400).send('ID와 PW를 모두 입력하세요.');
+    if (!username || !password) {
+        return res.status(400).json({ error: '아이디와 비밀번호를 입력해주세요.' });
     }
 
-    try { // 비밀번호 해싱 부분
-        
-        console.log('비밀번호 입력값:', PW); // 콘솔에 사용자가 입력한 비밀번호 출력
-        const hashedPW = await bcrypt.hash(PW, 10); // 입력한 pw를 10의 보안강도로 해싱 후 hashedPW에 저장
-        console.log('해시된 비밀번호:', hashedPW); // 콘솔에 해시된 비밀번호 출력
+    try {
+        const [rows] = await db.promise().query('SELECT * FROM USER WHERE ID = ?', [username]);
+        if (rows.length === 0) {
+            return res.status(400).json({ error: '존재하지 않는 회원입니다.' });
+        }
 
-        
-        const [results] = await db.query('INSERT INTO user (ID, PW) VALUES (?, ?)', [ID, hashedPW]); //db에 ID와 hashedPW를 저장
-        console.log('DB 저장 성공',); // 콘솔에 DB 저장 성공 출력
-        res.json({ msg: 'DB 저장 성공'}); // json형식으로 DB 저장 성공 메시지 전송
-    } catch (err) { // db에 저장하는데 에러가 나면 실행
-        console.error('에러 발생:', err);
-        res.status(500).json({ msg: '서버 오류', error: err.message });
+        const user = rows[0];
+        const match = await bcrypt.compare(password, user.PW);
+        if (!match) {
+            return res.status(400).json({ error: '비밀번호가 틀렸습니다.' });
+        }
+
+        // 세션 저장
+        req.session.userId = user.ID;
+        req.session.username = user.ID;
+
+        // 로그인 유지 체크
+        if (rememberMe) {
+            req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000; // 7일
+        } else {
+            req.session.cookie.expires = false; // 브라우저 종료 시 세션 만료
+        }
+
+        res.json({ message: '로그인 성공!', redirect: '/login_success.html' });
+    } catch (err) {
+        console.error('로그인 오류:', err);
+        res.status(500).json({ error: '서버 오류가 발생했습니다.' });
     }
 });
 
-// 서버를 3000 포트로 실행
+app.get('/signup.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'sign_up.html'));
+});
+
+app.post('/signup', async (req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        return res.status(400).json({ error: '아이디와 비밀번호를 입력해주세요.' });
+    }
+
+    try {
+        const [rows] = await db.promise().query('SELECT * FROM USER WHERE ID = ?', [username]);
+        if (rows.length > 0) {
+            return res.status(400).json({ error: '이미 존재하는 회원입니다.' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await db.promise().query('INSERT INTO USER (ID, PW) VALUES (?, ?)', [username, hashedPassword]);
+
+        res.json({ message: '회원가입 성공!', redirect: '/login.html' });
+    } catch (err) {
+        console.error('회원가입 오류:', err);
+        res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    }
+});
+
+app.post('/delete', isAuthenticated, async (req, res) => {
+    try {
+        await db.promise().query('DELETE FROM USER WHERE ID = ?', [req.session.userId]);
+        req.session.destroy();
+        res.json({ message: '회원탈퇴 성공!', redirect: '/signup.html' });
+    } catch (err) {
+        console.error('회원탈퇴 오류:', err);
+        res.status(500).json({ error: '회원탈퇴 중 오류가 발생했습니다.' });
+    }
+});
+
+app.get('/login_success.html', isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login_success.html'));
+});
+
+app.get('/Pyramid.html', isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'Pyramid.html'));
+});
+
+app.get('/logout', (req, res) => {
+    req.session.destroy();
+    res.json({ message: '로그아웃 성공!', redirect: '/login.html' });
+});
+
+app.get('/user', (req, res) => {
+    if (req.session.userId) {
+        res.json({ username: req.session.username });
+    } else {
+        res.status(401).json({ error: '로그인되지 않음' });
+    }
+});
+
 app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`);
+    console.log(`Server running at http://localhost:${port}`);
 });
