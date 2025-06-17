@@ -1,19 +1,17 @@
 <!DOCTYPE html>
 <html lang="ko">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="sign_up_login.css">
-        <title>로그인 성공 페이지</title>
-    </head>
-    <body>
-        <!-- 텍스트 스타일 정해주기 -->
-        <div style="display:flex; flex-direction:column; justify-content:center; margin-top: 100px; font-size: 150px;">로그인 성공!!!
-            <span style="margin-left: 20px;">환영합니다🤗</span>
-            <!-- 피라미드 만들기 버튼 -->
-            <div class ="pyramid-button">
-                <button type="button" class="pyramid-button" onclick="location.href='Pyramid.html'">피라미드 만들러 가기!!</button>
-            </div>
-        </div>
-
-        <script src = "sign_up_login.js"></script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 성공</title>
+    <link rel="stylesheet" href="/sign_up_login.css">
+</head>
+<body>
+    <h1>로그인 성공!!!</h1>
+    <p>환영합니다 <span id="username-display"></span>님🤗</p>
+    <div id="error-message" style="color: red;"></div>
+    <button class="pyramid-button" onclick="window.location.href='/Pyramid.html'">피라미드 만들러 가기!!</button>
+    <p><a href="#" onclick="logout()">로그아웃</a></p>
+    <script src="/sign_up_login.js"></script>
+</body>
+</html>
