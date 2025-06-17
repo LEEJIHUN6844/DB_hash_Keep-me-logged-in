@@ -15,7 +15,6 @@ body{
     align-items: center;
     justify-content: flex-start;
     padding-top: 30px;
-    gap: 20px;
     width: 290px;
     height: 100px;
     background-color: white;
@@ -23,10 +22,21 @@ body{
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.089);
     position: relative;
 }
+
+#signup-form, #login-form{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
 /* 로그인 유지 버튼 */
 .remember-me{
-    margin-right: 200px;
     font-size: 12px;
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
 }
 
 /* 회원가입 버튼 */
@@ -50,7 +60,6 @@ body{
 /* 회원가입-로그인 창으로 이동하는 링크 */
 .login-link{
     margin-top: 30px;
-
 }
 
 /* 피라미드 만들기 버튼*/
