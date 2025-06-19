@@ -1,7 +1,11 @@
 const express = require('express');
 const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
-require('dotenv').config();
+require('dotenv').config({ path: __dirname + '/.env' });
+console.log('ENV Loaded:', process.env); // 모든 환경 변수 출력
+if (!process.env.SESSION_SECRET) {
+    console.error('SESSION_SECRET is not loaded!');
+}
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
 const bodyParser = require('body-parser');
@@ -39,11 +43,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET || 'default-secret-key-123', // 기본값 추가
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     store: sessionStore,
-    cookie: {secure : false},
+    cookie: { secure: false },
 }));
 
 // 로그인 여부 확인 미들웨어
