@@ -1,7 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
-require('dotenv').config({ path: __dirname + '/.env' });
+require('dotenv').config();
 console.log('ENV Loaded:', process.env); // 모든 환경 변수 출력
 if (!process.env.SESSION_SECRET) {
     console.error('SESSION_SECRET is not loaded!');
@@ -17,7 +17,7 @@ const port = 3000;
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'dlwlgns123', // MySQL 비밀번호로 변경
+    password: 'dlwlgns123',
     database: 'JIHUN'
 });
 
@@ -45,7 +45,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
     secret: process.env.SESSION_SECRET || 'default-secret-key-123', // 기본값 추가
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
     store: sessionStore,
     cookie: { secure: false },
 }));
