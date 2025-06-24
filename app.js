@@ -2,10 +2,6 @@ const express = require('express');
 const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
 require('dotenv').config();
-console.log('ENV Loaded:', process.env); // 모든 환경 변수 출력
-if (!process.env.SESSION_SECRET) {
-    console.error('SESSION_SECRET is not loaded!');
-}
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
 const bodyParser = require('body-parser');
@@ -15,11 +11,12 @@ const port = 3000;
 
 // MySQL 연결 설정
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'dlwlgns123',
-    database: 'JIHUN'
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD, 
+    database: process.env.DB_NAME,
 });
+module.exports = db
 
 db.connect(err => {
     if (err) {
@@ -41,13 +38,13 @@ const sessionStore = new MySQLStore({
 // 미들웨어 설정
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'default-secret-key-123', // 기본값 추가
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
     store: sessionStore,
-    cookie: { secure: false },
+    cookie: {secure : false},
 }));
 
 // 로그인 여부 확인 미들웨어
@@ -64,7 +61,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/login.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'login.html'));
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 app.post('/login', async (req, res) => {
@@ -105,7 +102,7 @@ app.post('/login', async (req, res) => {
 });
 
 app.get('/signup.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'sign_up.html'));
+    res.sendFile(path.join(__dirname, 'public', 'sign_up.html'));
 });
 
 app.post('/signup', async (req, res) => {
@@ -143,11 +140,11 @@ app.post('/delete', isAuthenticated, async (req, res) => {
 });
 
 app.get('/login_success.html', isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'login_success.html'));
+    res.sendFile(path.join(__dirname, 'public', 'login_success.html'));
 });
 
 app.get('/Pyramid.html', isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'Pyramid.html'));
+    res.sendFile(path.join(__dirname, 'public', 'Pyramid.html'));
 });
 
 app.get('/logout', (req, res) => {
