@@ -41,7 +41,7 @@ const sessionStore = new MySQLStore({
 // 미들웨어 설정
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname)));
 app.use(session({
     secret: process.env.SESSION_SECRET || 'default-secret-key-123', // 기본값 추가
     resave: false,
@@ -64,7 +64,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/login.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+    res.sendFile(path.join(__dirname, 'login.html'));
 });
 
 app.post('/login', async (req, res) => {
@@ -105,7 +105,7 @@ app.post('/login', async (req, res) => {
 });
 
 app.get('/signup.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'sign_up.html'));
+    res.sendFile(path.join(__dirname, 'sign_up.html'));
 });
 
 app.post('/signup', async (req, res) => {
@@ -143,11 +143,11 @@ app.post('/delete', isAuthenticated, async (req, res) => {
 });
 
 app.get('/login_success.html', isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login_success.html'));
+    res.sendFile(path.join(__dirname, 'login_success.html'));
 });
 
 app.get('/Pyramid.html', isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'Pyramid.html'));
+    res.sendFile(path.join(__dirname, 'Pyramid.html'));
 });
 
 app.get('/logout', (req, res) => {
